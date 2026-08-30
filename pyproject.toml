@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "servelive"
+version = "0.1.0"
+description = "Static file server with no-cache headers and inotify-driven live reload over SSE"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Reymart Centeno", email = "reymartcenteno03@gmail.com" }]
+classifiers = [
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+# No runtime dependencies: pure stdlib (ctypes inotify, http.server).
+
+[project.urls]
+Homepage = "https://github.com/groovyrey/servelive"
+
+[project.scripts]
+servelive = "servelive.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest", "build", "twine"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
