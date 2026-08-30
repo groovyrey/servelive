@@ -35,7 +35,7 @@ class ReloadHub:
     def add(self, event):
         with self._lock:
             self._clients.append(event)
-        return self._remove_client
+        return functools.partial(self._remove_client, event)
 
     def _remove_client(self, event):
         with self._lock:

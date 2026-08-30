@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "servelive"
-version = "0.1.0"
+version = "0.1.1"
 description = "Static file server with no-cache headers and inotify-driven live reload over SSE"
 readme = "README.md"
 requires-python = ">=3.8"
