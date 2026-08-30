@@ -4,10 +4,56 @@ import functools
 import http.server
 import io
 import os
+import re
 import socketserver
+import sys
 import threading
 
 from servelive.watcher import is_watchable, Watcher
+
+_CYAN = "\033[36m"
+_GREEN = "\033[32m"
+_YELLOW = "\033[33m"
+_BOLD = "\033[1m"
+_DIM = "\033[2m"
+_RESET = "\033[0m"
+
+_METHOD_COLORS = {
+    "GET": _CYAN,
+    "POST": _YELLOW,
+    "PUT": _YELLOW,
+    "DELETE": "\033[31m",
+    "HEAD": _DIM,
+    "OPTIONS": _DIM,
+    "PATCH": _YELLOW,
+}
+
+_RE_METHOD = re.compile(r'"([A-Z]+) ')
+_RE_STATUS = re.compile(r'HTTP/\d\.\d" (\d{3})')
+
+
+def _use_color():
+    return sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+
+
+def _status_color(code):
+    if 200 <= code < 300:
+        return _GREEN
+    if 300 <= code < 400:
+        return _CYAN
+    if 400 <= code < 600:
+        return "\033[31m"
+    return "\033[33m"
+
+
+def _highlight_method(msg, method, status_text):
+    col = _METHOD_COLORS.get(method, _DIM)
+    msg = _RE_METHOD.sub(f'"\033[1m{col}{method}\033[0m ', msg, count=1)
+    code = int(status_text) if status_text.isdigit() else None
+    if code is not None:
+        sc = _status_color(code)
+        msg = _RE_STATUS.sub(f'\033[1m{sc}{status_text}\033[0m', msg, count=1)
+    return msg
 
 LIVE_RELOAD = b"""<script>
 (function () {
@@ -68,6 +114,17 @@ def sse_body(hub):
 
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
     server_version = "servelive/1.1"
+
+    def log_message(self, fmt, *args):
+        msg = fmt % args
+        if _use_color():
+            m = _RE_METHOD.search(msg)
+            s = _RE_STATUS.search(msg)
+            if m:
+                status = s.group(1) if s else None
+                msg = _highlight_method(msg, m.group(1), status or "")
+        sys.stderr.write(self.address_string() + " - - [" +
+                         self.log_date_time_string() + "] " + msg + "\n")
 
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
