@@ -78,6 +78,7 @@ class Watcher:
         self.poll_ms = poll_ms
         self._fd = None
         self._wd_to_path = {}
+        self._last = None
 
     def start(self):
         """Start watching. Returns self, or None if inotify is unavailable."""
@@ -132,7 +133,8 @@ class Watcher:
                     if not pending["flag"]:
                         continue
                     pending["flag"] = False
-                self.on_change()
+                    last = self._last
+                self.on_change(last)
 
         threading.Thread(target=broadcaster, daemon=True).start()
 
@@ -164,6 +166,8 @@ class Watcher:
                         )
                         off += name_len
                         dirname = self._wd_to_path.get(wd, self.root)
+                        changed = os.path.join(dirname, name) if name else dirname
+                        self._last = changed
                         if (maskv & (IN_CREATE | IN_MOVED_TO)) and name:
                             newpath = os.path.join(dirname, name)
                             if os.path.isdir(newpath):
